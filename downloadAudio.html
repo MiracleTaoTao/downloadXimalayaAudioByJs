@@ -1,0 +1,89 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<html>
+
+<head>
+  <title>喜马拉雅音频JS版</title>
+  <script type="text/javascript" src="js/jquery.min.js"></script>
+</head>
+
+<body>
+  <input id="albumId" />
+  <button onclick="search()">搜索</button>
+  <button onclick="download()">下载</button>
+  <div id="fileList">
+</body>
+
+</html>
+
+<script type="text/javascript">
+
+  function search() {
+    var albumId = $("#albumId").val();
+    $.ajax({
+      type: "GET",
+      url: "https://www.ximalaya.com/revision/album",
+      data: { "albumId": albumId },//4756811
+      dataType: "json",
+      success: function (data) {
+        if (data && data.data && data.ret == 200) {
+          var pageNum = data.data.tracksInfo.pageNum;
+          var pageSize = data.data.tracksInfo.pageSize;
+          var total = data.data.tracksInfo.trackTotalCount;
+
+          //总页数
+          var totalPage = total / pageSize + 1;
+          for(var i = 1 ; i <= totalPage ; i++){
+            $.ajax({
+              type: "GET",
+              url: "https://www.ximalaya.com/revision/play/album",
+              data: { 
+                "albumId": albumId,
+                "pageNum": i,
+                "sort":-1,
+                "pageSize":pageSize
+                },
+              dataType: "json",
+              success: function (data) {
+                if (data && data.data && data.ret == 200) {
+                  var result = data.data.tracksAudioPlay;
+                  var listHtml = "";
+                  for(var j=0; j <result.length; j++){
+                    listHtml+="<a href="+result[j].src+">"+result[j].trackName+"</a></br>"
+                  }
+                  $("#fileList").append(listHtml);
+                }
+              }
+
+            });
+          }
+
+
+        }
+        console.log(data);
+      }
+
+    });
+  }
+
+  function download(){
+    //文件下载
+    var obj = "http://audio.xmcdn.com/group22/M05/16/B6/wKgJM1gYvDKgP4bBAFO7CGP_MIk161.m4a";
+    var blob = new Blob([obj], { type: 'application/octet-stream' }),
+    fileName = "《摸金天师》第416章 六地火.m4a";
+    downFile(blob, fileName);
+
+  }
+    //js下载文件流
+    function downFile(blob, fileName) {
+        if (window.navigator.msSaveOrOpenBlob) {
+            navigator.msSaveBlob(blob, fileName);
+        } else {
+            var link = document.createElement('a');
+            link.href = window.URL.createObjectURL(blob);
+            link.download = fileName;
+            link.click();
+            window.URL.revokeObjectURL(link.href);
+        }
+    }
+
+</script>
