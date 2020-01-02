@@ -1,0 +1,131 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<html>
+
+<head>
+  <title>喜马拉雅音频JS版</title>
+  <script type="text/javascript" src="js/jquery.min.js"></script>
+</head>
+
+<body>
+  <input id="albumId" />
+  <button onclick="search()">搜索</button>
+  <button onclick="download()">下载</button>
+  <div id="fileList">
+</body>
+
+</html>
+
+<script type="text/javascript">
+
+  function search() {
+    let albumId = $("#albumId").val();
+	
+	if(!albumId){
+		return;
+	}
+	
+	let listHtml = "";
+	$("#fileList").append(listHtml);
+    $.ajax({
+      type: "GET",
+      url: "https://www.ximalaya.com/revision/album",
+      data: { "albumId": albumId },//31732357
+      dataType: "json",
+	  async: false,
+      success: function (data) {
+        if (data && data.data && data.ret == 200) {
+          let pageNum = data.data.tracksInfo.pageNum;
+          let pageSize = data.data.tracksInfo.pageSize;
+          let total = data.data.tracksInfo.trackTotalCount;
+
+          //总页数
+          let totalPage = total / pageSize + 1;
+          for(let i = 1 ; i <= totalPage ; i++){
+			getTracks(albumId,i,function callback(data){
+				let tracks = data.data.tracks;
+				
+				for(let j = 0 ; j < tracks.length; j++){
+					let trackId = tracks[j].trackId;
+					let trackName = tracks[j].title;
+					getUrl(trackId,function callback(data){
+						if (data && data.data && data.ret == 200) {
+							listHtml="<a href="+data.data.src+">"+trackName+"</a></br>";
+							$("#fileList").append(listHtml);
+						}
+					})
+				}
+			
+			});
+          }
+		  
+
+        }
+      }
+
+    });
+	
+  }
+  
+  function getTracks(albumId,pageNum,callback){
+	  $.ajax({
+	  type: "GET",
+	  url: "https://www.ximalaya.com/revision/album/v1/getTracksList",
+	  data: { 
+		"albumId": albumId,
+		"pageNum": pageNum,
+		"sort":-1
+		},
+	  async: false,
+	  dataType: "json",
+	  success: function (data) {
+		if (data && data.data && data.ret == 200) {
+			callback(data);
+		}
+	  }
+
+	});
+  }
+  
+  function getUrl(trackId,callback){
+	$.ajax({
+	  type: "GET",
+	  url: "https://www.ximalaya.com/revision/play/v1/audio",
+	  data: { 
+		"id": trackId,
+		"ptype":1
+		},
+	  dataType: "json",
+	  async: false,
+	  success: function (data) {
+	  
+		callback(data);
+
+	  }
+	});
+  }
+
+  function download(){
+    //文件下载
+    var obj = "https://fdfs.xmcdn.com/group31/M0B/49/27/wKgJSVmENabBdA_mABCpuFzjg1c647.m4a";
+    //var blob = new Blob([obj], { type: 'application/octet-stream' }),
+    fileName = "《摸金天师》第416章 六地火.m4a";
+    // 	downFile(blob, fileName);
+	
+
+	
+
+  }
+    //js下载文件流
+    function downFile(blob, fileName) {
+        if (window.navigator.msSaveOrOpenBlob) {
+            navigator.msSaveBlob(blob, fileName);
+        } else {
+            var link = document.createElement('a');
+            link.href = window.URL.createObjectURL(blob);
+            link.download = fileName;
+            link.click();
+            window.URL.revokeObjectURL(link.href);
+        }
+    }
+
+</script>
